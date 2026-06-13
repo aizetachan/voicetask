@@ -133,13 +133,70 @@ los plugins vía manifest merging.
 El widget nativo (WidgetKit) lee un snapshot de tareas que la app escribe en un
 **App Group** compartido: `group.com.nakama.ahora`.
 
-> El plugin nativo del snapshot y el Widget Extension se documentan en las
-> secciones siguientes a medida que se implementan (fases 7 y 8). El App Group
-> ya está declarado en `ios/App/App/App.entitlements`.
+Flujo de datos:
 
-**Activar el App Group en Xcode** (target **App**):
-Signing & Capabilities → **+ Capability** → **App Groups** → marca
-`group.com.nakama.ahora`. (El mismo grupo se activará en el target del widget.)
+```
+tasksStore  ──build──▶  buildWidgetSnapshot()  ──JSON──▶  WidgetBridge (Swift)
+                                                              │
+                            UserDefaults(suiteName: group)  ◀─┘
+                            WidgetCenter.reloadAllTimelines()
+                                          │
+                                          ▼
+                            AhoraWidget lee el snapshot y se redibuja
+```
+
+Cada vez que cambian las tareas, la app llama a `pushWidgetSnapshot()`
+(`src/services/widgetBridge.ts`), que invoca el plugin nativo
+`WidgetBridge.updateSnapshot({ tasks })`. El plugin escribe el JSON en el App
+Group y llama `WidgetCenter.shared.reloadAllTimelines()`.
+
+### Punto de verificación del JSON compartido
+
+- **En web (dev):** `pushWidgetSnapshot` deja el JSON en
+  `localStorage["ahora.widget.snapshot"]`. Inspecciónalo en DevTools →
+  Application → Local Storage para comprobar el array ordenado
+  `{title, dueAt, priority, done}`.
+- **En iOS:** tras crear/completar tareas, el widget debe reflejar el cambio.
+  Para depurar, el snapshot vive en
+  `UserDefaults(suiteName: "group.com.nakama.ahora")`, clave `ahora.snapshot`.
+
+### 1) Activar el App Group (target App)
+
+Xcode → target **App** → **Signing & Capabilities** → **+ Capability** →
+**App Groups** → marca/crea `group.com.nakama.ahora`. Esto enlaza
+`ios/App/App/App.entitlements` (ya incluido).
+
+### 2) Añadir el plugin nativo `WidgetBridge` al target App
+
+Los fuentes ya están en `ios/App/App/WidgetBridge/`:
+
+- `WidgetBridgePlugin.swift`
+- `WidgetBridgePlugin.m` (registro Capacitor)
+
+En Xcode: arrastra la carpeta `WidgetBridge` al grupo **App** del navegador de
+proyecto (si no aparece ya) y asegúrate de que ambos archivos tienen marcado el
+**Target Membership: App**. No requiere cambios en JS: el plugin se registra
+solo como `WidgetBridge`.
+
+### 3) Crear el Widget Extension target
+
+El código del widget ya está escrito en `ios/AhoraWidget/`
+(`AhoraWidget.swift`, `Info.plist`, `AhoraWidget.entitlements`). Para integrarlo:
+
+1. Xcode → **File ▸ New ▸ Target… ▸ Widget Extension**. Nómbralo
+   `AhoraWidget`, **desmarca** "Include Configuration Intent", finish.
+2. Xcode crea archivos de plantilla: **sustitúyelos** por los de
+   `ios/AhoraWidget/` de este repo (reemplaza el `AhoraWidget.swift` y el
+   `Info.plist` generados por los versionados aquí).
+3. Target **AhoraWidget** → **Signing & Capabilities** → **+ Capability** →
+   **App Groups** → marca `group.com.nakama.ahora` (usa el
+   `AhoraWidget.entitlements` incluido o deja que Xcode lo genere).
+4. Build & Run del scheme **AhoraWidget** en el simulador, o añade el widget a
+   la pantalla de inicio desde la app.
+
+El widget es **systemMedium**, estático, muestra hasta 4 filas (atrasadas →
+hoy → próximas), cabecera con la fecha y contador de atrasadas, y **toda su
+superficie abre la app** vía `ahora://abrir` (`.widgetURL`).
 
 ---
 

@@ -9,8 +9,10 @@ import {
 import { createTask, type Task } from '../domain/task';
 import type { ParsedTask } from '../domain/parser';
 import { groupTasks, type GroupedTasks } from '../domain/grouping';
+import { buildWidgetSnapshot } from '../domain/widget';
 import { storage, STORAGE_KEYS } from '../services/storage';
 import { notifications } from '../services/notifications';
+import { pushWidgetSnapshot } from '../services/widgetBridge';
 
 interface State {
   tasks: Task[];
@@ -76,10 +78,12 @@ export function TasksProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Persiste cada cambio una vez cargado (no sobreescribe antes de leer).
+  // Persiste cada cambio una vez cargado (no sobreescribe antes de leer) y
+  // actualiza el snapshot del widget (App Group + recarga de timelines).
   useEffect(() => {
     if (!state.loaded) return;
     void storage.save(STORAGE_KEYS.tasks, state.tasks);
+    void pushWidgetSnapshot(buildWidgetSnapshot(state.tasks, new Date()));
   }, [state.tasks, state.loaded]);
 
   const value = useMemo<TasksContextValue>(() => {
