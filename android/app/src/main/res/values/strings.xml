@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Ahora</string>
+    <string name="title_activity_main">Ahora</string>
+    <string name="package_name">com.nakama.ahora</string>
+    <string name="custom_url_scheme">com.nakama.ahora</string>
+</resources>
