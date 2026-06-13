@@ -1,0 +1,31 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Capacitor / native
+ios/App/Pods
+ios/App/App/public
+android/.gradle
+android/app/build
+android/build
+android/.idea
+android/local.properties
+android/app/src/main/assets/public
