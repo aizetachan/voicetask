@@ -128,6 +128,24 @@ los plugins vía manifest merging.
 
 ---
 
+## Iconos y splash
+
+Se generan con [`@capacitor/assets`](https://github.com/ionic-team/capacitor-assets)
+a partir de imágenes fuente en `assets/`:
+
+```bash
+npm run assets
+```
+
+Esto regenera **todos** los tamaños de icono y splash de iOS y Android. Las
+fuentes (`assets/icon-only.png`, `icon-foreground.png`, `icon-background.png`,
+`splash.png`, `splash-dark.png`) las crea `scripts/gen-assets.mjs` como un
+placeholder de marca (check en la tinta de acento sobre fondo oscuro).
+
+**Para usar tu propio logo:** sustituye los PNG de `assets/` por los tuyos
+(icono 1024×1024, splash 2732×2732) y ejecuta `npm run assets`. Si solo quieres
+cambiar el placeholder, edita `scripts/gen-assets.mjs`.
+
 ## App Group + Widget de iOS
 
 El widget nativo (WidgetKit) lee un snapshot de tareas que la app escribe en un
@@ -166,17 +184,15 @@ Xcode → target **App** → **Signing & Capabilities** → **+ Capability** →
 **App Groups** → marca/crea `group.com.nakama.ahora`. Esto enlaza
 `ios/App/App/App.entitlements` (ya incluido).
 
-### 2) Añadir el plugin nativo `WidgetBridge` al target App
+### 2) Plugin nativo `WidgetBridge` (ya cableado)
 
-Los fuentes ya están en `ios/App/App/WidgetBridge/`:
+Los fuentes están en `ios/App/App/WidgetBridge/` (`WidgetBridgePlugin.swift` +
+`WidgetBridgePlugin.m`) y **ya están añadidos al target App** en el
+`project.pbxproj` versionado, así que no hay nada que hacer en Xcode.
 
-- `WidgetBridgePlugin.swift`
-- `WidgetBridgePlugin.m` (registro Capacitor)
-
-En Xcode: arrastra la carpeta `WidgetBridge` al grupo **App** del navegador de
-proyecto (si no aparece ya) y asegúrate de que ambos archivos tienen marcado el
-**Target Membership: App**. No requiere cambios en JS: el plugin se registra
-solo como `WidgetBridge`.
+> Si en algún momento regeneras la carpeta `ios/` desde cero (`cap add ios`),
+> vuelve a cablearlo con: `node scripts/wire-widget-plugin.mjs` (es
+> idempotente). El plugin se registra solo en JS como `WidgetBridge`.
 
 ### 3) Crear el Widget Extension target
 
@@ -207,9 +223,10 @@ superficie abre la app** vía `ahora://abrir` (`.widgetURL`).
 | Dev web | `npm run dev` |
 | Tests | `npm test` |
 | Build web | `npm run build` |
-| Sync nativo | `npx cap sync` |
-| Abrir iOS | `npx cap open ios` |
-| Abrir Android | `npx cap open android` |
+| Iconos + splash | `npm run assets` |
+| Sync nativo | `npm run sync` (= `build && cap sync`) |
+| Abrir/ejecutar iOS | `npm run ios` (= `build && sync ios && open ios`) |
+| Abrir/ejecutar Android | `npm run android` |
 
 ---
 

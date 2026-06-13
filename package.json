@@ -8,7 +8,11 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "assets": "node scripts/gen-assets.mjs && capacitor-assets generate --ios --android --iconBackgroundColor #0e0f13 --iconBackgroundColorDark #0e0f13 --splashBackgroundColor #0e0f13 --splashBackgroundColorDark #0e0f13",
+    "sync": "npm run build && cap sync",
+    "ios": "npm run build && cap sync ios && cap open ios",
+    "android": "npm run build && cap sync android && cap open android"
   },
   "dependencies": {
     "@capacitor-community/speech-recognition": "^6.0.1",
@@ -23,6 +27,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^6.2.1",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
