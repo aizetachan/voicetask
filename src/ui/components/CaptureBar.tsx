@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useMemo, useRef, useState, type FormEvent } from 'react';
 import { parseInput, type ParsedTask } from '../../domain/parser';
+import { useDictation } from '../hooks/useDictation';
 import { LivePreview } from './LivePreview';
 
 interface Props {
@@ -9,6 +10,9 @@ interface Props {
 export function CaptureBar({ onAdd }: Props) {
   const [text, setText] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleDictated = useCallback((dictated: string) => setText(dictated), []);
+  const { isSupported, isListening, error, toggle } = useDictation({ onText: handleDictated });
 
   const trimmed = text.trim();
   // Preview en vivo: re-parsea en cada cambio del texto.
@@ -27,8 +31,20 @@ export function CaptureBar({ onAdd }: Props) {
 
   return (
     <form className="capture" onSubmit={submit}>
+      {error && <p className="capture__error" role="alert">{error}</p>}
       {preview && <LivePreview parsed={preview} now={new Date()} />}
       <div className="capture__row">
+        {isSupported && (
+          <button
+            type="button"
+            className={`capture__mic${isListening ? ' capture__mic--on' : ''}`}
+            onClick={toggle}
+            aria-pressed={isListening}
+            aria-label={isListening ? 'Detener dictado' : 'Dictar tarea'}
+          >
+            {isListening ? <span className="capture__mic-wave" aria-hidden="true" /> : '🎤'}
+          </button>
+        )}
         <input
           ref={inputRef}
           className="capture__input"
@@ -36,7 +52,7 @@ export function CaptureBar({ onAdd }: Props) {
           inputMode="text"
           autoComplete="off"
           autoCapitalize="sentences"
-          placeholder="Captura una tarea…"
+          placeholder={isListening ? 'Escuchando…' : 'Captura una tarea…'}
           value={text}
           onChange={(e) => setText(e.target.value)}
           aria-label="Texto de la tarea"

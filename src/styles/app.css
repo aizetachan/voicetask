@@ -228,6 +228,65 @@
   border-color: var(--accent);
 }
 
+.capture__mic {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.capture__mic--on {
+  background: var(--accent);
+  border-color: var(--accent);
+  animation: mic-pulse 1.2s ease-in-out infinite;
+}
+
+/* Onda animada mientras escucha */
+.capture__mic-wave {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent-contrast);
+  animation: mic-wave 1s ease-in-out infinite;
+}
+
+@keyframes mic-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+}
+
+@keyframes mic-wave {
+  0%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.capture__error {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  color: var(--danger);
+  text-align: center;
+}
+
 .capture__add {
   flex: none;
   width: 48px;
