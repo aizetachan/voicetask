@@ -10,6 +10,7 @@ import { createTask, type Task } from '../domain/task';
 import type { ParsedTask } from '../domain/parser';
 import { groupTasks, type GroupedTasks } from '../domain/grouping';
 import { storage, STORAGE_KEYS } from '../services/storage';
+import { notifications } from '../services/notifications';
 
 interface State {
   tasks: Task[];
@@ -21,7 +22,7 @@ type Action =
   | { type: 'add'; task: Task }
   | { type: 'toggle'; id: string }
   | { type: 'delete'; id: string }
-  | { type: 'update'; task: Task };
+  | { type: 'patch'; id: string; patch: Partial<Task> };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -38,10 +39,12 @@ function reducer(state: State, action: Action): State {
       };
     case 'delete':
       return { ...state, tasks: state.tasks.filter((t) => t.id !== action.id) };
-    case 'update':
+    case 'patch':
       return {
         ...state,
-        tasks: state.tasks.map((t) => (t.id === action.task.id ? action.task : t)),
+        tasks: state.tasks.map((t) =>
+          t.id === action.id ? { ...t, ...action.patch } : t,
+        ),
       };
     default:
       return state;
@@ -88,10 +91,35 @@ export function TasksProvider({ children }: { children: ReactNode }) {
       addTask: (parsed) => {
         const task = createTask(parsed);
         dispatch({ type: 'add', task });
+        // Programa la notificación (si hay fecha futura) y guarda su id.
+        void notifications.scheduleTask(task).then((notificationId) => {
+          if (notificationId !== undefined) {
+            dispatch({ type: 'patch', id: task.id, patch: { notificationId } });
+          }
+        });
         return task;
       },
-      toggleTask: (id) => dispatch({ type: 'toggle', id }),
-      deleteTask: (id) => dispatch({ type: 'delete', id }),
+      toggleTask: (id) => {
+        const task = state.tasks.find((t) => t.id === id);
+        dispatch({ type: 'toggle', id });
+        if (!task) return;
+        if (!task.done) {
+          // Pasa a completada: cancela su notificación.
+          if (task.notificationId !== undefined) void notifications.cancel(task.notificationId);
+        } else {
+          // Vuelve a pendiente: reprograma si aún es futura.
+          void notifications.scheduleTask({ ...task, done: false }).then((notificationId) => {
+            if (notificationId !== undefined) {
+              dispatch({ type: 'patch', id, patch: { notificationId } });
+            }
+          });
+        }
+      },
+      deleteTask: (id) => {
+        const task = state.tasks.find((t) => t.id === id);
+        if (task?.notificationId !== undefined) void notifications.cancel(task.notificationId);
+        dispatch({ type: 'delete', id });
+      },
     };
   }, [state.tasks, state.loaded]);
 
